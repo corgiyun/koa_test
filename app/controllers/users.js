@@ -1,7 +1,7 @@
 const User = require("../models/users");
 const jsonwebtoken = require("jsonwebtoken");
+// const PRIVATE_KEY = fs.readFileSync("../rsa.private");
 const { secret } = require("../config");
-
 class UserController {
   async find(ctx) {
     // 查询用户列表分业
@@ -41,9 +41,9 @@ class UserController {
 
     const user = await User.findById(ctx.params.id)
       .select(selectFields)
-      .populateStr(populateStr);
+      .populate(populateStr);
     if (!user) {
-      ctx.throw(404, "用户不存在");
+      ctx.throw(404, "用户不存在!!");
     }
     ctx.body = user;
   }
@@ -104,8 +104,14 @@ class UserController {
       name: { type: "string", required: true },
       password: { type: "string", required: true },
     });
+    const user = await User.findOne(ctx.request.body);
+    if (!user) {
+      ctx.throw(401, "用户名或密码不正确");
+    }
     const { _id, name } = user;
-    const token = jsonwebtoken.sign({ _id, name }, secret, { expiresIn: "1d" });
+    const token = jsonwebtoken.sign({ _id, name }, secret, {
+      expiresIn: "1d",
+    });
     ctx.body = { token };
   }
 
@@ -113,7 +119,7 @@ class UserController {
     // 查询用户是否存在
     const user = await User.findById(ctx.params.id);
     if (!user) {
-      ctx.throw(404, "用户不存在");
+      ctx.throw(404, "用户不存在!!!");
       await next();
     }
   }

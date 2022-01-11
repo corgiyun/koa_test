@@ -1,6 +1,6 @@
-const { Mongoose } = require("mongoose");
+const mongoose = require("mongoose");
 
-const { Schema, model } = Mongoose;
+const { Schema, model } = mongoose;
 
 const userScheme = new Schema(
   {
@@ -8,6 +8,7 @@ const userScheme = new Schema(
     name: { type: String, required: true },
     password: { type: String, required: true, select: false },
     avatar_url: { type: String },
+    _id: { type: String },
     gender: {
       type: String,
       enum: ["male", "female"],
