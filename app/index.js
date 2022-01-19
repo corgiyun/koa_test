@@ -1,5 +1,4 @@
 const Koa = require("koa");
-const Router = require("koa-router");
 const koaBody = require("koa-body");
 const path = require("path");
 const parameter = require("koa-parameter");
@@ -9,7 +8,6 @@ const routing = require("./routes");
 const error = require("koa-json-error");
 
 const app = new Koa();
-const router = new Router();
 const { connectionStr } = require("./config");
 
 mongoose.connect(
@@ -25,6 +23,27 @@ mongoose.connection.on("error", console.error);
 
 app.use(koaStatic(path.join(__dirname, "public"))); // 静态资源
 
+app.use(async (ctx, next) => {
+  ctx.set('Access-Control-Allow-Origin', '*'); // 允许跨域
+  ctx.set('Access-Control-Allow-Methods', 'POST,GET,OPTIONS,HEAD,PUT,DELETE'); // 支持的方法
+  ctx.set('Access-Control-Allow-Credentials', 'true'); // 允许传入Cookie
+  ctx.set('Access-Control-Max-Age', 2592000); // 过期时间一个月
+  // 如果有特殊的请求头，直接响应
+  if (ctx.get('Access-Control-Request-Headers')) {
+      ctx.set('Access-Control-Allow-Headers', ctx.get('Access-Control-Request-Headers'));
+  }
+  // FIX：浏览器某些情况下没有带Origin头
+  ctx.set('Vary', 'Origin');
+
+  // 如果是 OPTIONS 请求，则直接返回
+  if (ctx.method === 'OPTIONS') {
+      ctx.status = 204;
+      return;
+  }
+
+  await next();
+});
+
 app.use(
   error({
     // 错误处理
@@ -34,30 +53,12 @@ app.use(
   })
 );
 
-// app.use(
-//   koaBody({
-//     // 处理 post 请求和图片上传
-//     multipart: true, // 支持文件上传
-//     encoding: "gzip",
-//     formidable: {
-//       uploadDir: path.join(__dirname, "public/uploads"), // 设置文件上传目录
-//       keepExtensions: true, // 保持文件的后缀
-//       maxFieldsSize: 2 * 1024 * 1024, // 文件上传大小
-//       onFileBegin: (name, file) => {
-//         // 上传文件前的设置
-//         console.log(name);
-//         console.log(file);
-//       },
-//     },
-//   })
-// );
+app.use(
+  koaBody()
+);
 
 app.use(parameter(app)); // 参数校验
 
 routing(app); // 路由处理
-
-router.get("/", async (ctx) => {
-  ctx.body = { message: "Hello World!" };
-});
 
 app.listen(3000, () => console.log("程序启动在3000端口了！"));

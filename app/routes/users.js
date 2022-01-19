@@ -19,7 +19,7 @@ const auth = jwt({ secret }); // jwt 鉴权
 
 router.get("/", find); // 获取用户列表
 
-router.post("/", create); // 创建用户 需要 jwt 鉴权
+router.post("/", auth, create); // 创建用户 需要 jwt 鉴权
 
 router.get("/:id", findById); // 获取特定用户
 

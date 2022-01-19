@@ -2,15 +2,31 @@ const User = require("../models/users");
 const jsonwebtoken = require("jsonwebtoken");
 // const PRIVATE_KEY = fs.readFileSync("../rsa.private");
 const { secret } = require("../config");
+const checkBody = (data) => {
+  return {
+    code: 200,
+    msg: 'ok',
+    data
+  }
+}
+
 class UserController {
   async find(ctx) {
-    // 查询用户列表分业
-    const { per_page = 10 } = ctx.query;
-    const page = Math.max(ctx.query.page * 1, 1) - 1;
-    const prePage = Math.max(per_page * 1, 1);
-    ctx.body = await User.find({ name: new RegExp(ctx.query.q) })
-      .limit(prePage)
-      .skip(page * prePage);
+    // 查询用户列表
+    const { pageSize = 10, page = 1} = ctx.query;
+    const _page = Math.max(page * 1, 1) - 1;
+    const _pageSize = Math.max(pageSize * 1, 1);
+    const list = await User.find({ name: new RegExp(ctx.query.q) })
+    .limit(_pageSize)
+    .skip(_page * _pageSize);
+    ctx.body = checkBody({
+      page: _page + 1,
+      pageSize: _pageSize,
+      // total: await User.count(),
+      // total1: await User.aggregate([{$count: "count"}]),
+      total: await User.count({_id: {$exists: true}}),
+      list
+    })
   }
 
   async findById(ctx) {
@@ -112,7 +128,11 @@ class UserController {
     const token = jsonwebtoken.sign({ _id, name }, secret, {
       expiresIn: "1d",
     });
-    ctx.body = { token };
+    ctx.body = {data: {
+      code: 200,
+      msg: 'ok',
+      token
+    }};
   }
 
   async checkUserExist(ctx, next) {
